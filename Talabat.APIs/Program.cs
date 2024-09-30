@@ -1,5 +1,8 @@
 
 using Microsoft.EntityFrameworkCore;
+using Talabat.Core.Entities;
+using Talabat.Core.IRepositories;
+using Talabat.Repository;
 using Talabat.Repository.Data;
 
 namespace Talabat.APIs
@@ -20,6 +23,8 @@ namespace Talabat.APIs
             options.UseSqlServer(
                 builder.Configuration.GetConnectionString("DefaultConnection")
                 ));
+           
+            builder.Services.AddScoped(typeof(IGenericRepository<>),typeof(GenericRepository<>));
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -36,15 +41,19 @@ namespace Talabat.APIs
             var _dbContext = services.GetRequiredService<StoreDbContext>();
 
             var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+
             try
             {
                 await _dbContext.Database.MigrateAsync();
+
+                await StoreContextSeed.SeedAsync(_dbContext);
             }
             catch (Exception ex)
             {
                 var logger = loggerFactory.CreateLogger<Program>();
                 logger.LogError(ex, "An Error has been occured while updating the database");
             }
+
 
             #region Configure Kestral Middlewares
 
